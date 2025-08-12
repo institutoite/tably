@@ -1,9 +1,0 @@
-## Pages
-- [Configurar Test - Tably](/testconfig): Configura tu test de práctica de tablas de multiplicar en Tably.
-- [Dashboard - Tably](/dashboard): Panel principal de Tably para practicar tablas de multiplicar.
-- [Iniciar Sesión - Tably](/login): Inicia sesión en tu cuenta de Tably para practicar tablas de multiplicar.
-- [Mi Perfil - Tably](/profile): Gestiona tu perfil, revisa tu progreso y exporta tus resultados en Tably.
-- [Ranking - Tably](/ranking): Ranking de los mejores jugadores en Tably.
-- [Registro - Tably](/register): Crea tu cuenta en Tably para empezar a practicar tablas de multiplicar.
-- [Resultados del Test - Tably](/results): Resultados de tu test de tablas de multiplicar en Tably.
-- [Test en Progreso - Tably](/testgame): Resolviendo test de tablas de multiplicar en Tably.
