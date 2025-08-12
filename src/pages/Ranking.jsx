@@ -8,9 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 
+
 function Ranking() {
   const [rankings, setRankings] = useState([]);
   const [userPosition, setUserPosition] = useState(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
   const { user } = useAuth();
 
   const fetchRankings = useCallback(async () => {
@@ -27,18 +30,24 @@ function Ranking() {
 
       const usersWithStats = profiles.map(p => {
         const userResults = tests.filter(result => result.user_id === p.id);
-        if (userResults.length === 0) {
-          return { ...p, bestScore: 0, bestTime: Infinity, totalTests: 0 };
+        let bestScore = 0;
+        let bestTime = null;
+        if (userResults.length > 0) {
+          bestScore = Math.max(...userResults.map(r => r.score));
+          const bestTimeArr = userResults.filter(r => r.score === bestScore).map(r => r.total_time);
+          bestTime = bestTimeArr.length > 0 ? Math.min(...bestTimeArr) : null;
         }
-        const bestScore = Math.max(...userResults.map(r => r.score));
-        const bestTime = Math.min(...userResults.filter(r => r.score === bestScore).map(r => r.total_time));
         return { ...p, bestScore, bestTime, totalTests: userResults.length };
       });
 
+      // Ordenar por bestScore desc, luego bestTime asc (nulls al final)
       const sortedUsers = usersWithStats
-        .filter(u => u.totalTests > 0)
         .sort((a, b) => {
           if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
+          // Si ambos tienen bestTime, menor es mejor; si uno no tiene, va después
+          if (a.bestTime == null && b.bestTime == null) return 0;
+          if (a.bestTime == null) return 1;
+          if (b.bestTime == null) return -1;
           return a.bestTime - b.bestTime;
         });
 
@@ -103,7 +112,11 @@ function Ranking() {
           </div>
           <div className="flex-shrink-0 text-right">
             <p className="font-bold text-lg text-slate-800 dark:text-white">{player.bestScore}%</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{player.bestTime.toFixed(1)}s</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {typeof player.bestTime === 'number' && isFinite(player.bestTime)
+                ? `${player.bestTime.toFixed(1)}s`
+                : '—'}
+            </p>
           </div>
         </div>
       </motion.div>
@@ -155,11 +168,37 @@ function Ranking() {
           </CardHeader>
           <CardContent>
             {rankings.length > 0 ? (
-              <div className="space-y-4">
-                {rankings.map((player, index) => (
-                  <RankCard key={player.id} player={player} position={index + 1} />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {rankings.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((player, idx) => (
+                    <RankCard key={player.id} player={player} position={page * PAGE_SIZE + idx + 1} />
+                  ))}
+                </div>
+                <div className="flex justify-center items-center gap-2 mt-6">
+                  <button
+                    className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-50"
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                  >Anterior</button>
+                  <span className="mx-2 text-sm">Página {page + 1} de {Math.ceil(rankings.length / PAGE_SIZE)}</span>
+                  <button
+                    className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-50"
+                    onClick={() => setPage(p => Math.min(Math.ceil(rankings.length / PAGE_SIZE) - 1, p + 1))}
+                    disabled={page >= Math.ceil(rankings.length / PAGE_SIZE) - 1}
+                  >Siguiente</button>
+                </div>
+                {/* Mostrar usuario actual si no está en la página */}
+                {user && userPosition && (userPosition <= rankings.length) &&
+                  (userPosition <= page * PAGE_SIZE || userPosition > (page + 1) * PAGE_SIZE) && (
+                    <div className="mt-8">
+                      <div className="text-center text-xs text-slate-500 mb-2">Tu posición actual</div>
+                      <RankCard
+                        player={rankings[userPosition - 1]}
+                        position={userPosition}
+                      />
+                    </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12">
                 <Trophy className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
