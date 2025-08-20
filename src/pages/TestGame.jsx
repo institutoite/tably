@@ -6,6 +6,7 @@ import { Clock, CheckCircle, XCircle, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { useTest } from '@/contexts/TestContext';
 
 function TestGame() {
   const [testConfig, setTestConfig] = useState(null);
@@ -20,7 +21,13 @@ function TestGame() {
   const [questionStartTime, setQuestionStartTime] = useState(null);
   const inputRef = useRef(null);
 
+  const { setIsTestActive } = useTest();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsTestActive(true);
+    return () => setIsTestActive(false);
+  }, [setIsTestActive]);
 
   const generateQuestions = useCallback((config) => {
     if (!config) return [];

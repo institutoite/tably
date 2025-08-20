@@ -66,10 +66,10 @@ function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">Número de Teléfono</Label>
+                <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">Número de Teléfono Incluye codigo de pais</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input id="phone" name="phone" type="tel" placeholder="Ej: +59171234567" value={formData.phone} onChange={handleChange} className="pl-10" required />
+                  <Input id="phone" name="phone" type="tel" placeholder="Ingresa tu número de teléfono" value={formData.phone} onChange={handleChange} className="pl-10" required />
                 </div>
               </div>
 
@@ -97,12 +97,15 @@ function Login() {
             </div>
 
             <div className="mt-6 text-center">
-              <span className="text-slate-600 dark:text-slate-400">
-                ¿No tienes cuenta?{' '}
-                <Link to="/register" className="text-[rgb(38,186,165)] hover:underline font-medium">
-                  Regístrate aquí
-                </Link>
-              </span>
+                         <span className="text-lg font-semibold text-slate-700 dark:text-white">
+              ¿No tienes cuenta?{' '}
+              <Link
+                to="/register"
+                className="inline-block text-[rgb(38,186,165)] hover:underline font-bold text-xl"
+              >
+                Regístrate aquí
+              </Link>
+            </span>
             </div>
           </CardContent>
         </Card>
