@@ -6,7 +6,7 @@ const socialLinks = [
   { href: "https://www.tiktok.com/@ite_educabol", icon: FaTiktok, label: "TikTok" },
   { href: "https://www.facebook.com/ite.educabol", icon: FaFacebook, label: "Facebook" },
   { href: "https://www.youtube.com/@ite_educabol", icon: FaYoutube, label: "YouTube" },
-  { href: "https://whatsapp.com/channel/0029VaAu3lwJJhzX5iSJBg44", icon: FaWhatsapp, label: "WhatsApp" },
+  { href: "https://wa.me/59171324941?text=Vengo%20de%20TikTok%20me%20gustaría%20saber%20más%20sobre%20Tably", icon: FaWhatsapp, label: "WhatsApp" },
   { href: "https://ite.com.bo", icon: Globe, label: "Website" },
 ];
 

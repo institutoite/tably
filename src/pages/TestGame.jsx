@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,20 +23,34 @@ function TestGame() {
   const navigate = useNavigate();
 
   const generateQuestions = useCallback((config) => {
-    if (!config || !config.tables || config.tables.length === 0) return [];
-
+    if (!config) return [];
+    if (config.mode === 'participar') {
+      // Genera los 36 ejercicios fijos y los mezcla aleatoriamente
+      const ejercicios = [
+        {a:2,b:2},{a:2,b:3},{a:2,b:4},{a:2,b:5},{a:2,b:6},{a:2,b:7},{a:2,b:8},{a:2,b:9},
+        {a:3,b:3},{a:3,b:4},{a:3,b:5},{a:3,b:6},{a:3,b:7},{a:3,b:8},{a:3,b:9},
+        {a:4,b:4},{a:4,b:5},{a:4,b:6},{a:4,b:7},{a:4,b:8},{a:4,b:9},
+        {a:5,b:5},{a:5,b:6},{a:5,b:7},{a:5,b:8},{a:5,b:9},
+        {a:6,b:6},{a:6,b:7},{a:6,b:8},{a:6,b:9},
+        {a:7,b:7},{a:7,b:8},{a:7,b:9},
+        {a:8,b:8},{a:8,b:9},
+        {a:9,b:9}
+      ];
+      for (let i = ejercicios.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ejercicios[i], ejercicios[j]] = [ejercicios[j], ejercicios[i]];
+      }
+      return ejercicios.map(e => ({...e, answer: e.a * e.b}));
+    }
+    if (!config.tables || config.tables.length === 0) return [];
     const questions = [];
     const addedQuestions = new Set();
     const sortedTables = [...config.tables].sort((a,b) => a - b);
-
     sortedTables.forEach(table => {
       let limit = 10;
       if (config.mode === 'resumida') limit = 9;
-
       for (let i = (config.mode === 'resumida' ? 2 : 0); i <= limit; i++) {
-        
         const key1 = `${Math.min(table, i)}x${Math.max(table, i)}`;
-        
         if (config.mode === 'resumida') {
           if (!addedQuestions.has(key1)) {
             questions.push({ a: table, b: i, answer: table * i });
@@ -59,7 +72,6 @@ function TestGame() {
         }
       }
     });
-    
     return questions.sort(() => Math.random() - 0.5);
   }, []);
 
@@ -109,6 +121,7 @@ function TestGame() {
         setQuestionStartTime(Date.now());
         inputRef.current?.focus();
       } else {
+        // Calcular resultados
         const finalAnswers = [...answers, answerData];
         const totalTime = (Date.now() - testStartTime) / 1000;
         const correctAnswersCount = finalAnswers.filter(a => a.correct).length;
@@ -116,15 +129,24 @@ function TestGame() {
         const score = Math.round((correctAnswersCount / totalQuestions) * 100);
         const averageTime = totalTime / totalQuestions;
 
-        navigate('/results', { 
+        // Navegar a resultados inmediatamente
+        navigate('/results', {
           state: {
             score,
             correct: correctAnswersCount,
             incorrect: totalQuestions - correctAnswersCount,
             total: totalQuestions,
-            totalTime,
             averageTime,
-            answers: finalAnswers,
+            totalTime,
+            questions: finalAnswers.map(a => ({
+              a: a.question.a,
+              b: a.question.b,
+              answer: a.question.answer,
+              userAnswer: a.userAnswer,
+              correct: a.correct,
+              time: a.timeSpent,
+              vencidaPorTiempo: a.timeOut
+            })),
             config: testConfig
           }
         });

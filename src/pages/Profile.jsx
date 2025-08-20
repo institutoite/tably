@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
@@ -10,11 +9,11 @@ import { toast } from '@/components/ui/use-toast';
 import { Camera, Edit, FileDown, Loader2, Check, X } from 'lucide-react';
 import ImageCropper from '@/components/ImageCropper';
 import { resolvePhpImageUrl, withBase } from '@/lib/utils';
-import { generateProfilePdf } from '@/lib/pdfGenerator';
 import { supabase } from '@/lib/customSupabaseClient';
+import jsPDF from 'jspdf';
 
 function Profile() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, updateUserProfileImage } = useAuth();
   const [name, setName] = useState(user.name);
   const [isEditing, setIsEditing] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -24,6 +23,7 @@ function Profile() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef(null);
   const [avatarSrc, setAvatarSrc] = useState('');
+  const [profileImage, setProfileImage] = useState(user?.profileImage || '');
 
   const fetchProfileData = useCallback(async () => {
     if (!user) return;
@@ -143,6 +143,9 @@ function Profile() {
         if (uploadError) throw uploadError;
         const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
         finalUrl = data.publicUrl;
+
+        // Actualiza el perfil en la tabla
+        await updateUser({ ...user, profile_picture: finalUrl });
       } catch (err) {
         // 2) Fallback a backend local (PHP) que guarda en public/images/avatars
         // Requiere que estés sirviendo el proyecto con Apache/PHP (XAMPP) y no solo con Vite dev server.
@@ -159,8 +162,6 @@ function Profile() {
         }
         finalUrl = json.url; // ej: /images/avatars/<archivo>.jpg
       }
-
-      await updateUser({ ...user, profile_picture: finalUrl });
 
       // Limpiar pendiente
       localStorage.removeItem(`pendingProfileImage:${user.id}`);
@@ -237,6 +238,17 @@ function Profile() {
     }
   };
 
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setProfileImage(ev.target.result);
+        updateUserProfileImage(ev.target.result); // Guarda en contexto/base de datos
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <>
@@ -336,10 +348,145 @@ function Profile() {
               </div>
             </CardContent>
           </Card>
+
         </motion.div>
       </div>
     </>
   );
+}
+
+export function generateProfilePdf(user, userTests, rankings) {
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'pt',
+    format: 'a4'
+  });
+
+  // Colores
+  const primary = [38,186,165];
+  const secondary = [55,95,122];
+
+  // Encabezado
+  pdf.setFillColor(...primary);
+  pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), 90, 'F');
+
+  // Iniciales del usuario en círculo blanco
+  pdf.setFillColor(255,255,255);
+  pdf.circle(55, 45, 30, 'F');
+  pdf.setFontSize(28);
+  pdf.setTextColor(...primary);
+  const initials = user.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : user.email
+      ? user.email[0].toUpperCase()
+      : 'U';
+  pdf.text(initials, 55, 55, { align: 'center' });
+
+  // Nombre y datos
+  pdf.setFontSize(18);
+  pdf.setTextColor(255,255,255);
+  pdf.text(user.name || 'Usuario', 110, 40);
+  pdf.setFontSize(12);
+  pdf.text(user.email || '', 110, 60);
+  pdf.text(user.phone || '', 110, 80);
+
+  // Línea separadora
+  pdf.setDrawColor(...primary);
+  pdf.setLineWidth(1.5);
+  pdf.line(30, 100, pdf.internal.pageSize.getWidth() - 30, 100);
+
+  // Resumen
+  let y = 120;
+  pdf.setFontSize(16);
+  pdf.setTextColor(...primary);
+  pdf.text('Resumen de usuario', 40, y);
+
+  y += 20;
+  pdf.setFontSize(12);
+  pdf.setTextColor(...secondary);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('Ranking:', 40, y);
+  pdf.setFont(undefined, 'normal');
+  pdf.text(rankings?.position ? `${rankings.position} de ${rankings.total}` : 'Sin ranking', 120, y);
+
+  y += 20;
+  pdf.setFont(undefined, 'bold');
+  pdf.text('Tests realizados:', 40, y);
+  pdf.setFont(undefined, 'normal');
+  pdf.text(userTests.length ? `${userTests.length}` : '0', 140, y);
+
+  y += 20;
+  pdf.setFont(undefined, 'bold');
+  pdf.text('Mejor puntaje:', 40, y);
+  pdf.setFont(undefined, 'normal');
+  const bestScore = userTests.length ? Math.max(...userTests.map(t => t.score)) : 0;
+  pdf.text(`${bestScore}%`, 140, y);
+
+  y += 20;
+  pdf.setFont(undefined, 'bold');
+  pdf.text('Mejor tiempo:', 40, y);
+  pdf.setFont(undefined, 'normal');
+  const bestTime = userTests.length ? Math.min(...userTests.map(t => t.total_time)) : 0;
+  pdf.text(`${bestTime.toFixed(2)} seg`, 140, y);
+
+  // Historial de tests
+  y += 40;
+  pdf.setFontSize(15);
+  pdf.setTextColor(...primary);
+  pdf.text('Historial de tests', 40, y);
+
+  y += 20;
+  pdf.setFontSize(11);
+  pdf.setTextColor(...secondary);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('Fecha', 40, y);
+  pdf.text('Puntaje', 160, y);
+  pdf.text('Tiempo', 240, y);
+  pdf.setFont(undefined, 'normal');
+
+  y += 14;
+  userTests.slice(0, 20).forEach(test => {
+    pdf.text(new Date(test.date).toLocaleDateString(), 40, y);
+    pdf.text(`${test.score}%`, 160, y);
+    pdf.text(`${test.total_time.toFixed(2)} seg`, 240, y);
+    y += 14;
+    if (y > pdf.internal.pageSize.getHeight() - 80) {
+      pdf.addPage();
+      y = 60;
+    }
+  });
+
+  // Pie de página con datos institucionales y redes sociales (solo iconos)
+  pdf.setFillColor(...secondary);
+  pdf.rect(0, pdf.internal.pageSize.getHeight() - 60, pdf.internal.pageSize.getWidth(), 60, 'F');
+  pdf.setFontSize(10);
+  pdf.setTextColor(255,255,255);
+  pdf.text('ITE EDUCABOL | info@ite.com.bo | 71039910 / 71324941 | www.ite.com.bo', 40, pdf.internal.pageSize.getHeight() - 35);
+
+  // Iconos (usa imágenes PNG en public/icons/)
+  let x = 40;
+  const yFooter = pdf.internal.pageSize.getHeight() - 20;
+  try {
+    pdf.addImage(`${window.location.origin}/icons/facebook.png`, 'PNG', x, yFooter - 10, 12, 12);
+    x += 18;
+    pdf.text('ite.educabol', x, yFooter);
+    x += 60;
+    pdf.addImage(`${window.location.origin}/icons/instagram.png`, 'PNG', x, yFooter - 10, 12, 12);
+    x += 18;
+    pdf.text('ite.educabol', x, yFooter);
+    x += 60;
+    pdf.addImage(`${window.location.origin}/icons/tiktok.png`, 'PNG', x, yFooter - 10, 12, 12);
+    x += 18;
+    pdf.text('ite_educabol', x, yFooter);
+    x += 70;
+    pdf.addImage(`${window.location.origin}/icons/youtube.png`, 'PNG', x, yFooter - 10, 12, 12);
+    x += 18;
+    pdf.text('ITE EDUCABOL', x, yFooter);
+  } catch {}
+
+  pdf.text('Horario: Lun–Sáb: 07:30–18:30 | Servicios: Apoyo escolar, cursos de tecnología, idiomas, memoria, robótica, etc.', 40, pdf.internal.pageSize.getHeight() - 7);
+
+  pdf.save('perfil-tably.pdf');
 }
 
 export default Profile;

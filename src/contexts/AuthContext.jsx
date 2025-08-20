@@ -146,6 +146,10 @@ export function AuthProvider({ children }) {
       if (fullUser) {
         setUser(fullUser);
         toast({ title: "¡Bienvenido de vuelta!", description: `Hola ${fullUser.name}` });
+        // Refresca la página para asegurar el contexto actualizado
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
         return { success: true };
       }
       
@@ -163,6 +167,10 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       setUser(null);
       toast({ title: "Sesión cerrada", description: "¡Hasta pronto!" });
+      // Refresca la página para asegurar el contexto actualizado
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       toast({ title: "Error al cerrar sesión", description: error.message, variant: "destructive" });
     }

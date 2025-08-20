@@ -69,3 +69,39 @@ try {
     echo json_encode([ 'success' => false, 'error' => $e->getMessage() ]);
     exit;
 }
+
+// ...dentro de tu componente Profile.jsx...
+const uploadPendingImage = async () => {
+  if (!pendingImage) return;
+  setIsUploading(true);
+
+  try {
+    // Convierte la imagen base64 a Blob
+    const res = await fetch(pendingImage);
+    const blob = await res.blob();
+
+    const form = new FormData();
+    form.append('file', blob, 'avatar.jpg');
+    form.append('userId', user.id);
+
+    // Llama directamente al endpoint PHP
+    const resp = await fetch('/upload.php', { method: 'POST', body: form });
+    const json = await resp.json().catch(() => ({}));
+
+    if (!resp.ok || !json.success || !json.url) {
+      alert(json.error || 'No se pudo subir la imagen');
+      setIsUploading(false);
+      return;
+    }
+
+    // Actualiza el perfil con la nueva URL
+    await updateUser({ ...user, profile_picture: json.url });
+    setPendingImage(null);
+    setAvatarSrc(json.url);
+    alert('Imagen subida correctamente');
+  } catch (err) {
+    alert('Error al subir la imagen');
+  } finally {
+    setIsUploading(false);
+  }
+};

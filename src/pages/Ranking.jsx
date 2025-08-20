@@ -18,6 +18,7 @@ function Ranking() {
 
   const fetchRankings = useCallback(async () => {
     try {
+
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, profile_picture');
@@ -28,16 +29,24 @@ function Ranking() {
         .select('user_id, score, total_time');
       if (testsError) throw testsError;
 
+      // LOG: cuántos perfiles y tests se reciben y ejemplo de datos
+      console.log('Ranking.jsx - perfiles recibidos:', profiles?.length, profiles?.slice(0,3));
+      console.log('Ranking.jsx - tests recibidos:', tests?.length, tests?.slice(0,3));
+
       const usersWithStats = profiles.map(p => {
         const userResults = tests.filter(result => result.user_id === p.id);
+        console.log(`Usuario ${p.name} (${p.id}) tiene tests:`, userResults);
         let bestScore = 0;
         let bestTime = null;
-        if (userResults.length > 0) {
-          bestScore = Math.max(...userResults.map(r => r.score));
-          const bestTimeArr = userResults.filter(r => r.score === bestScore).map(r => r.total_time);
-          bestTime = bestTimeArr.length > 0 ? Math.min(...bestTimeArr) : null;
+        let totalTests = userResults.length;
+        if (totalTests > 0) {
+          // Mejor score de todos los tests de este usuario
+          bestScore = Math.max(...userResults.map(r => typeof r.score === 'number' ? r.score : 0));
+          // Mejor tiempo de todos los tests de este usuario
+          const validTimes = userResults.map(r => typeof r.total_time === 'number' ? r.total_time : null).filter(t => t !== null);
+          bestTime = validTimes.length > 0 ? Math.min(...validTimes) : null;
         }
-        return { ...p, bestScore, bestTime, totalTests: userResults.length };
+        return { ...p, bestScore, bestTime, totalTests };
       });
 
       // Ordenar por bestScore desc, luego bestTime asc (nulls al final)
