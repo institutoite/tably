@@ -142,7 +142,7 @@ function TestConfig() {
             </Label>
             <Label htmlFor="modo-participar" className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${mainMode === 'participar' ? 'border-[rgb(38,186,165)] bg-[rgb(38,186,165)]/10' : 'border-slate-200 dark:border-slate-700 hover:border-[rgb(38,186,165)]/50'}`}>
               <input type="radio" id="modo-participar" name="mainMode" value="participar" checked={mainMode === 'participar'} onChange={() => setMainMode('participar')} />
-              <span className="font-medium">Modo Participar</span>
+              <span className="font-medium">Modo Desafío</span>
             </Label>
           </div>
         </div>
