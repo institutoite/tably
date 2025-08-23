@@ -194,7 +194,7 @@ function TestGame() {
   const incorrectCount = answers.length - correctCount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-blue-900 flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-start justify-start p-2 pt-1 bg-white">
       <Helmet>
         <title>Test en Progreso - Tably</title>
         <meta name="description" content="Resolviendo test de tablas de multiplicar en Tably." />
@@ -209,10 +209,10 @@ function TestGame() {
           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2"><motion.div className="bg-gradient-to-r from-[rgb(38,186,165)] to-[rgb(55,95,122)] h-2 rounded-full" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.5 }}/></div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card><CardContent className="p-4 text-center"><CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-2" /><p className="text-2xl font-bold text-green-600">{correctCount}</p><p className="text-xs text-slate-500">Correctas</p></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><XCircle className="w-6 h-6 text-red-500 mx-auto mb-2" /><p className="text-2xl font-bold text-red-600">{incorrectCount}</p><p className="text-xs text-slate-500">Incorrectas</p></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><Target className="w-6 h-6 text-blue-500 mx-auto mb-2" /><p className="text-2xl font-bold text-blue-600">{questions.length - currentQuestionIndex}</p><p className="text-xs text-slate-500">Restantes</p></CardContent></Card>
+        <div className="flex gap-1 mb-1 sm:gap-2 sm:mb-2">
+          <div className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold">✔ {correctCount}</div>
+          <div className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-bold">✘ {incorrectCount}</div>
+          <div className="px-2 py-1 rounded bg-slate-200 text-slate-700 text-xs font-bold">⏳ {questions.length - currentQuestionIndex}</div>
         </div>
 
         <Card className={`glassmorphism border-white/20 transition-all duration-300 ${showFeedback ? (isCorrect ? 'correct-answer' : 'incorrect-answer') : ''}`}>
